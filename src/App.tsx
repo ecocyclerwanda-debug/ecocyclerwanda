@@ -35,7 +35,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import logoImg from './assets/logo.png';
-import samImg from './assets/SAM.jpg';
+import samImg from './assets/sam.jpg';
 import winnerImg from './assets/winner.jpg';
 import aurelieImg from './assets/aurelie.jpg';
 
