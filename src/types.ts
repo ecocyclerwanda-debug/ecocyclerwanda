@@ -8,9 +8,14 @@ export type Page =
   | 'partners'
   | 'news'
   | 'donate'
-  | 'contact';
+  | 'contact'
+  | 'service-farming'
+  | 'service-climate'
+  | 'service-circular'
+  | 'service-export'
+  | 'service-empowerment';
 
-export type NavItem = {
+export interface NavItem {
   label: string;
   id: Page;
-};
+}

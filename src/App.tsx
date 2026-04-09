@@ -33,9 +33,12 @@ import {
 import { Page, NavItem } from './types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import SplashScreen from './components/SplashScreen';
+import LanguageSelector from './components/LanguageSelector';
+import { translations, type Language } from './i18n';
 
 import logoImg from './assets/logo.png';
-import samImg from './assets/SAM.jpg';
+import samImg from './assets/sam.jpg';
 import winnerImg from './assets/winner.jpg';
 import aurelieImg from './assets/aurelie.jpg';
 
@@ -43,7 +46,9 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const TopBar = () => {
+type T = (typeof translations)[Language];
+
+const TopBar = ({ t }: { t: T }) => {
   return (
     <div className="bg-emerald-900 text-white py-2 border-b border-white/10 hidden md:block">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-xs font-medium">
@@ -54,7 +59,7 @@ const TopBar = () => {
               href="mailto:ecocyclerwandaltd@gmail.com"
               className="hover:text-emerald-400 transition-colors"
             >
-              ecocyclerwandaltd@gmail.com
+              {t.topbar.email}
             </a>
           </div>
           <div className="flex items-center gap-2">
@@ -63,7 +68,7 @@ const TopBar = () => {
               href="tel:+250788963938"
               className="hover:text-emerald-400 transition-colors"
             >
-              +250 788 963 938
+              {t.topbar.phone}
             </a>
           </div>
           <div className="flex items-center gap-2">
@@ -74,12 +79,12 @@ const TopBar = () => {
               rel="noopener noreferrer"
               className="hover:text-emerald-400 transition-colors"
             >
-              WhatsApp
+              {t.topbar.whatsapp}
             </a>
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-white/60">Follow us:</span>
+          <span className="text-white/60">{t.common.followUs}</span>
           <a
             href="https://www.facebook.com/EcoCycleRwanda"
             target="_blank"
@@ -121,23 +126,29 @@ const TopBar = () => {
 const Navbar = ({
   currentPage,
   setCurrentPage,
+  t,
+  language,
+  setLanguage,
 }: {
   currentPage: Page;
   setCurrentPage: (p: Page) => void;
+  t: T;
+  language: Language;
+  setLanguage: (l: Language) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems: NavItem[] = [
-    { label: 'Home', id: 'home' },
-    { label: 'About', id: 'about' },
-    { label: 'Services', id: 'services' },
-    { label: 'Products', id: 'products' },
-    { label: 'Projects', id: 'projects' },
-    { label: 'Impact', id: 'impact' },
-    { label: 'Partners', id: 'partners' },
-    { label: 'News', id: 'news' },
-    { label: 'Donate', id: 'donate' },
-    { label: 'Contact', id: 'contact' },
+    { label: t.nav.home, id: 'home' },
+    { label: t.nav.about, id: 'about' },
+    { label: t.nav.services, id: 'services' },
+    { label: t.nav.products, id: 'products' },
+    { label: t.nav.projects, id: 'projects' },
+    { label: t.nav.impact, id: 'impact' },
+    { label: t.nav.partners, id: 'partners' },
+    { label: t.nav.news, id: 'news' },
+    { label: t.nav.donate, id: 'donate' },
+    { label: t.nav.contact, id: 'contact' },
   ];
 
   return (
@@ -155,7 +166,7 @@ const Navbar = ({
             />
           </div>
 
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -170,11 +181,48 @@ const Navbar = ({
                 {item.label}
               </button>
             ))}
+
+            <div className="flex items-center gap-1 border border-emerald-900/15 rounded-xl p-1">
+              <button
+                onClick={() => setLanguage('en')}
+                className={cn(
+                  'px-2 py-1 text-xs rounded-lg font-bold',
+                  language === 'en'
+                    ? 'bg-emerald-900 text-white'
+                    : 'text-emerald-900 hover:bg-emerald-50'
+                )}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage('rw')}
+                className={cn(
+                  'px-2 py-1 text-xs rounded-lg font-bold',
+                  language === 'rw'
+                    ? 'bg-emerald-900 text-white'
+                    : 'text-emerald-900 hover:bg-emerald-50'
+                )}
+              >
+                RW
+              </button>
+              <button
+                onClick={() => setLanguage('fr')}
+                className={cn(
+                  'px-2 py-1 text-xs rounded-lg font-bold',
+                  language === 'fr'
+                    ? 'bg-emerald-900 text-white'
+                    : 'text-emerald-900 hover:bg-emerald-50'
+                )}
+              >
+                FR
+              </button>
+            </div>
+
             <button
               onClick={() => setCurrentPage('contact')}
               className="bg-emerald-900 text-white px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-800 transition-all shadow-md"
             >
-              Get in Touch
+              {t.common.getInTouch}
             </button>
           </div>
 
@@ -212,6 +260,43 @@ const Navbar = ({
                   {item.label}
                 </button>
               ))}
+
+              <div className="flex justify-center gap-2 py-4 border-t border-emerald-900/5 mt-4">
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={cn(
+                    'px-3 py-2 text-sm rounded-lg font-bold',
+                    language === 'en'
+                      ? 'bg-emerald-900 text-white'
+                      : 'border border-emerald-900/15 text-emerald-900'
+                  )}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => setLanguage('rw')}
+                  className={cn(
+                    'px-3 py-2 text-sm rounded-lg font-bold',
+                    language === 'rw'
+                      ? 'bg-emerald-900 text-white'
+                      : 'border border-emerald-900/15 text-emerald-900'
+                  )}
+                >
+                  RW
+                </button>
+                <button
+                  onClick={() => setLanguage('fr')}
+                  className={cn(
+                    'px-3 py-2 text-sm rounded-lg font-bold',
+                    language === 'fr'
+                      ? 'bg-emerald-900 text-white'
+                      : 'border border-emerald-900/15 text-emerald-900'
+                  )}
+                >
+                  FR
+                </button>
+              </div>
+
               <div className="flex justify-center gap-8 py-6 border-t border-emerald-900/5 mt-4">
                 <a
                   href="https://www.facebook.com/EcoCycleRwanda"
@@ -254,7 +339,13 @@ const Navbar = ({
   );
 };
 
-const Footer = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
+const Footer = ({
+  setCurrentPage,
+  t,
+}: {
+  setCurrentPage: (p: Page) => void;
+  t: T;
+}) => {
   return (
     <footer className="bg-emerald-950 text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -268,8 +359,7 @@ const Footer = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
               />
             </div>
             <p className="text-slate-300 text-sm leading-relaxed mb-6">
-              Empowering youth, women, and persons with disabilities through
-              sustainable agriculture and circular economy solutions in Rwanda.
+              {t.footer.description}
             </p>
             <div className="flex gap-4">
               <a
@@ -308,52 +398,52 @@ const Footer = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold mb-6">Quick Links</h4>
+            <h4 className="text-lg font-semibold mb-6">{t.footer.quickLinks}</h4>
             <ul className="space-y-3 text-slate-300 text-sm">
               <li>
                 <button onClick={() => setCurrentPage('about')} className="hover:text-emerald-400 transition-colors">
-                  About Us
+                  {t.nav.about}
                 </button>
               </li>
               <li>
                 <button onClick={() => setCurrentPage('services')} className="hover:text-emerald-400 transition-colors">
-                  Our Services
+                  {t.nav.services}
                 </button>
               </li>
               <li>
                 <button onClick={() => setCurrentPage('products')} className="hover:text-emerald-400 transition-colors">
-                  Products
+                  {t.nav.products}
                 </button>
               </li>
               <li>
                 <button onClick={() => setCurrentPage('projects')} className="hover:text-emerald-400 transition-colors">
-                  Projects
+                  {t.nav.projects}
                 </button>
               </li>
               <li>
                 <button onClick={() => setCurrentPage('donate')} className="hover:text-emerald-400 transition-colors">
-                  Donate
+                  {t.nav.donate}
                 </button>
               </li>
               <li>
                 <button onClick={() => setCurrentPage('contact')} className="hover:text-emerald-400 transition-colors">
-                  Contact
+                  {t.nav.contact}
                 </button>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold mb-6">Contact Info</h4>
+            <h4 className="text-lg font-semibold mb-6">{t.footer.contactInfo}</h4>
             <ul className="space-y-4 text-slate-300 text-sm">
               <li className="flex gap-3 items-start">
                 <MapPin size={18} className="text-emerald-400 shrink-0" />
-                <span>Bugesera District, Rwanda</span>
+                <span>{t.footer.address}</span>
               </li>
               <li className="flex gap-3 items-center">
                 <Phone size={18} className="text-emerald-400 shrink-0" />
                 <a href="tel:+250788963938" className="hover:text-emerald-400 transition-colors">
-                  +250 788 963 938
+                  {t.topbar.phone}
                 </a>
               </li>
               <li className="flex gap-3 items-center">
@@ -364,25 +454,23 @@ const Footer = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
                   rel="noopener noreferrer"
                   className="hover:text-emerald-400 transition-colors"
                 >
-                  WhatsApp Us
+                  {t.footer.whatsappUs}
                 </a>
               </li>
               <li className="flex gap-3 items-center">
                 <Mail size={18} className="text-emerald-400 shrink-0" />
-                <span>ecocyclerwandaltd@gmail.com</span>
+                <span>{t.topbar.email}</span>
               </li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-lg font-semibold mb-6">Newsletter</h4>
-            <p className="text-slate-300 text-sm mb-4">
-              Subscribe to our updates for the latest news and impact stories.
-            </p>
+            <h4 className="text-lg font-semibold mb-6">{t.footer.newsletter}</h4>
+            <p className="text-slate-300 text-sm mb-4">{t.footer.newsletterText}</p>
             <form className="flex gap-2">
               <input
                 type="email"
-                placeholder="Your email"
+                placeholder={t.footer.yourEmail}
                 className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-sm w-full focus:outline-none focus:border-emerald-400"
               />
               <button
@@ -396,29 +484,37 @@ const Footer = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs">
-          <p>© {new Date().getFullYear()} EcoCycle Rwanda. All rights reserved.</p>
-          <p>Regenerating Agriculture. Empowering Communities. Including Everyone.</p>
+          <p>
+            © {new Date().getFullYear()} EcoCycle Rwanda. {t.footer.rights}
+          </p>
+          <p>{t.footer.tagline}</p>
         </div>
       </div>
     </footer>
   );
 };
 
-const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => {
+const HomePage = ({
+  setCurrentPage,
+  t,
+}: {
+  setCurrentPage: (p: Page) => void;
+  t: T;
+}) => {
   const stats = [
-    { label: 'Hectares of soil restored', value: '500+' },
-    { label: 'Youth trained', value: '800+' },
-    { label: 'Women engaged', value: '600+' },
-    { label: 'PWD participants supported', value: '150+' },
+    { label: t.home.stats.soil, value: '500+' },
+    { label: t.home.stats.youth, value: '800+' },
+    { label: t.home.stats.women, value: '600+' },
+    { label: t.home.stats.pwd, value: '150+' },
   ];
 
   const services = [
-    { title: 'Crop & Horticulture', icon: <Sprout className="w-8 h-8" /> },
-    { title: 'Livestock Integration', icon: <Users className="w-8 h-8" /> },
-    { title: 'Compost Processing', icon: <Recycle className="w-8 h-8" /> },
-    { title: 'Circular Solutions', icon: <Globe className="w-8 h-8" /> },
-    { title: 'Empowerment', icon: <Heart className="w-8 h-8" /> },
-    { title: 'Inclusion Programs', icon: <Award className="w-8 h-8" /> },
+    { title: t.home.services.crop, icon: <Sprout className="w-8 h-8" /> },
+    { title: t.home.services.livestock, icon: <Users className="w-8 h-8" /> },
+    { title: t.home.services.compost, icon: <Recycle className="w-8 h-8" /> },
+    { title: t.home.services.circular, icon: <Globe className="w-8 h-8" /> },
+    { title: t.home.services.empowerment, icon: <Heart className="w-8 h-8" /> },
+    { title: t.home.services.inclusion, icon: <Award className="w-8 h-8" /> },
   ];
 
   return (
@@ -440,25 +536,23 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
             className="max-w-5xl mx-auto flex flex-col items-center"
           >
             <span className="inline-block px-6 py-2 bg-emerald-400/20 backdrop-blur-xl border border-emerald-400/30 rounded-full text-emerald-300 text-sm font-black tracking-[0.3em] uppercase mb-12">
-              EcoCycle Rwanda
+              {t.home.badge}
             </span>
 
             <div className="space-y-2 md:space-y-4">
               <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tighter text-white drop-shadow-2xl">
-                Regenerating Agriculture.
+                {t.home.hero1}
               </h1>
               <h2 className="text-2xl md:text-4xl font-black leading-tight tracking-tight text-emerald-300 drop-shadow-xl">
-                Empowering Communities.
+                {t.home.hero2}
               </h2>
               <h3 className="text-lg md:text-2xl font-bold leading-tight tracking-normal text-emerald-100/80">
-                Including Everyone.
+                {t.home.hero3}
               </h3>
             </div>
 
             <p className="text-lg md:text-xl mt-10 text-slate-100 font-light max-w-2xl leading-relaxed drop-shadow-lg">
-              Leading the transition to climate-smart circular farming. We restore
-              ecosystems while creating opportunities for youth, women, and persons
-              with disabilities.
+              {t.home.heroText}
             </p>
 
             <div className="flex flex-wrap justify-center gap-6 mt-12">
@@ -466,13 +560,15 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
                 onClick={() => setCurrentPage('products')}
                 className="bg-emerald-500 hover:bg-emerald-400 text-white px-12 py-6 rounded-2xl font-black text-lg transition-all flex items-center gap-3 shadow-2xl group"
               >
-                Our Products <Package size={24} className="group-hover:scale-110 transition-transform" />
+                {t.common.ourProducts}
+                <Package size={24} className="group-hover:scale-110 transition-transform" />
               </button>
               <button
                 onClick={() => setCurrentPage('about')}
                 className="bg-white/10 hover:bg-white/20 backdrop-blur-xl text-white border border-white/30 px-12 py-6 rounded-2xl font-black text-lg transition-all flex items-center gap-3 group"
               >
-                About Us <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
+                {t.common.aboutUs}
+                <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
               </button>
             </div>
           </motion.div>
@@ -501,7 +597,9 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
               className="text-center p-10 bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/50"
             >
               <div className="text-5xl font-bold text-emerald-900 mb-3">{stat.value}</div>
-              <div className="text-xs text-slate-500 uppercase tracking-[0.2em] font-bold">{stat.label}</div>
+              <div className="text-xs text-slate-500 uppercase tracking-[0.2em] font-bold">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -512,17 +610,17 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
             <div className="max-w-2xl">
               <span className="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">
-                What We Do
+                {t.common.whatWeDo}
               </span>
               <h2 className="text-5xl font-bold text-emerald-900 leading-tight">
-                Integrated Solutions for Sustainable Growth
+                {t.home.servicesTitle}
               </h2>
             </div>
             <button
               onClick={() => setCurrentPage('services')}
               className="px-8 py-4 bg-emerald-900/5 text-emerald-900 rounded-2xl font-bold hover:bg-emerald-900 hover:text-white transition-all flex items-center gap-2"
             >
-              View All Services <ChevronRight size={20} />
+              {t.common.viewAllServices} <ChevronRight size={20} />
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -540,10 +638,7 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
                   {service.icon}
                 </div>
                 <h3 className="text-2xl font-bold text-emerald-900 mb-4">{service.title}</h3>
-                <p className="text-slate-600 leading-relaxed mb-8">
-                  Innovative approaches designed to maximize productivity while
-                  preserving our natural resources.
-                </p>
+                <p className="text-slate-600 leading-relaxed mb-8">{t.home.serviceText}</p>
                 <div className="w-12 h-1 bg-emerald-400/30 group-hover:w-full transition-all duration-500" />
               </motion.div>
             ))}
@@ -555,15 +650,16 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
             <span className="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">
-              Updates
+              {t.common.latestUpdates}
             </span>
-            <h2 className="text-5xl font-bold text-emerald-900">Latest From The Field</h2>
+            <h2 className="text-5xl font-bold text-emerald-900">{t.home.newsTitle}</h2>
           </div>
           <button
             onClick={() => setCurrentPage('news')}
             className="hidden md:flex items-center gap-3 text-emerald-900 font-bold hover:text-emerald-500 group"
           >
-            Explore All News <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
+            {t.common.exploreAllNews}
+            <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -577,7 +673,7 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
                   <span className="text-white font-bold flex items-center gap-2">
-                    Read Article <ArrowRight size={18} />
+                    {t.home.readArticle} <ArrowRight size={18} />
                   </span>
                 </div>
                 <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-emerald-900 text-xs font-bold shadow-lg">
@@ -585,11 +681,10 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-emerald-900 mb-4 group-hover:text-emerald-500 transition-colors leading-tight">
-                EcoCycle Rwanda launches new circular farming initiative in Bugesera
+                {t.home.newsCardTitle}
               </h3>
               <p className="text-slate-500 leading-relaxed line-clamp-2">
-                Our latest project aims to transform organic waste into high-quality
-                compost for local farmers, creating a sustainable loop...
+                {t.home.newsCardText}
               </p>
             </motion.div>
           ))}
@@ -598,14 +693,14 @@ const HomePage = ({ setCurrentPage }: { setCurrentPage: (p: Page) => void }) => 
           onClick={() => setCurrentPage('news')}
           className="md:hidden mt-12 w-full py-5 bg-emerald-900 text-white rounded-2xl font-bold"
         >
-          View All News
+          {t.common.viewAllNews}
         </button>
       </section>
     </div>
   );
 };
 
-const AboutPage = () => {
+const AboutPage = ({ t }: { t: T }) => {
   const leaders = [
     {
       name: 'Eng. Samuel NIYIBIZI',
@@ -638,7 +733,7 @@ const AboutPage = () => {
           />
         </div>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
-          <h1 className="text-5xl font-bold">About EcoCycle Rwanda</h1>
+          <h1 className="text-5xl font-bold">{t.about.title}</h1>
         </div>
       </section>
 
@@ -646,30 +741,20 @@ const AboutPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="mb-12">
-              <h2 className="text-3xl font-bold text-emerald-900 mb-4">Our Vision</h2>
-              <p className="text-xl text-slate-600 italic leading-relaxed">
-                "To become a leading climate-smart circular agriculture enterprise in
-                Rwanda, regenerating land, enhancing livelihoods, and empowering
-                youth, women, and PWD."
-              </p>
+              <h2 className="text-3xl font-bold text-emerald-900 mb-4">{t.about.vision}</h2>
+              <p className="text-xl text-slate-600 italic leading-relaxed">{t.about.visionText}</p>
             </div>
             <div className="mb-12">
-              <h2 className="text-3xl font-bold text-emerald-900 mb-4">Our Mission</h2>
-              <p className="text-lg text-slate-600 leading-relaxed">
-                To deliver integrated agricultural, environmental, and value-chain
-                solutions that enhance productivity, restore ecosystems, and empower
-                youth, women, and persons with disabilities.
-              </p>
+              <h2 className="text-3xl font-bold text-emerald-900 mb-4">{t.about.mission}</h2>
+              <p className="text-lg text-slate-600 leading-relaxed">{t.about.missionText}</p>
             </div>
             <div className="grid grid-cols-2 gap-6">
-              {['Sustainability', 'Inclusion & Equity', 'Innovation', 'Transparency', 'Collaboration'].map(
-                (val) => (
-                  <div key={val} className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-                    <span className="font-medium text-slate-700">{val}</span>
-                  </div>
-                )
-              )}
+              {t.about.values.map((val) => (
+                <div key={val} className="flex items-center gap-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+                  <span className="font-medium text-slate-700">{val}</span>
+                </div>
+              ))}
             </div>
           </div>
           <div className="relative">
@@ -679,8 +764,8 @@ const AboutPage = () => {
               className="rounded-3xl shadow-2xl"
             />
             <div className="absolute -bottom-8 -left-8 bg-emerald-900 text-white p-8 rounded-3xl shadow-xl hidden md:block">
-              <div className="text-3xl font-bold mb-1">RDB Registered</div>
-              <div className="text-emerald-300 text-sm">Official Enterprise</div>
+              <div className="text-3xl font-bold mb-1">{t.about.registered}</div>
+              <div className="text-emerald-300 text-sm">{t.about.official}</div>
             </div>
           </div>
         </div>
@@ -689,8 +774,8 @@ const AboutPage = () => {
       <section className="bg-emerald-900/5 py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-emerald-900 mb-4">Leadership Team</h2>
-            <p className="text-slate-500">Dedicated professionals driving inclusion and sustainability.</p>
+            <h2 className="text-4xl font-bold text-emerald-900 mb-4">{t.about.leadership}</h2>
+            <p className="text-slate-500">{t.about.leadershipText}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {leaders.map((member, idx) => (
@@ -719,32 +804,43 @@ const AboutPage = () => {
   );
 };
 
-const ServicesPage = () => {
+const ServicesPage = ({
+  setCurrentPage,
+  t,
+}: {
+  setCurrentPage: (p: Page) => void;
+  t: T;
+}) => {
   const services = [
     {
-      title: 'Integrated Farming Systems',
-      desc: 'Mixed crop and livestock production using conservation agriculture techniques. Inclusive training for youth, women, and PWD.',
+      title: t.servicesPage.cards.farming.title,
+      desc: t.servicesPage.cards.farming.desc,
       icon: <Sprout className="w-10 h-10" />,
+      page: 'service-farming' as Page,
     },
     {
-      title: 'Climate-Smart Agriculture',
-      desc: 'Soil health programs and water-efficient farming. Mentoring vulnerable groups to adapt to climate change.',
+      title: t.servicesPage.cards.climate.title,
+      desc: t.servicesPage.cards.climate.desc,
       icon: <Zap className="w-10 h-10" />,
+      page: 'service-climate' as Page,
     },
     {
-      title: 'Circular Economy Solutions',
-      desc: 'Organic waste recycling and compost production. Creating green jobs for youth, women, and PWD.',
+      title: t.servicesPage.cards.circular.title,
+      desc: t.servicesPage.cards.circular.desc,
       icon: <Recycle className="w-10 h-10" />,
+      page: 'service-circular' as Page,
     },
     {
-      title: 'Agro-Processing & Export',
-      desc: 'Value addition, packaging, and export logistics guidance. Training women and youth-led enterprises.',
+      title: t.servicesPage.cards.export.title,
+      desc: t.servicesPage.cards.export.desc,
       icon: <Globe className="w-10 h-10" />,
+      page: 'service-export' as Page,
     },
     {
-      title: 'Youth & Women Empowerment',
-      desc: 'Skills development, entrepreneurship support, and inclusive employment programs.',
+      title: t.servicesPage.cards.empowerment.title,
+      desc: t.servicesPage.cards.empowerment.desc,
       icon: <Users className="w-10 h-10" />,
+      page: 'service-empowerment' as Page,
     },
   ];
 
@@ -752,9 +848,9 @@ const ServicesPage = () => {
     <div className="pb-24">
       <section className="bg-emerald-900 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold mb-6">Our Services</h1>
+          <h1 className="text-5xl font-bold mb-6">{t.servicesPage.title}</h1>
           <p className="text-xl text-emerald-100 max-w-2xl mx-auto">
-            Integrated solutions for a sustainable future in agriculture and community development.
+            {t.servicesPage.subtitle}
           </p>
         </div>
       </section>
@@ -769,8 +865,11 @@ const ServicesPage = () => {
               <div className="text-emerald-500 mb-6">{s.icon}</div>
               <h3 className="text-2xl font-bold text-emerald-900 mb-4">{s.title}</h3>
               <p className="text-slate-600 leading-relaxed mb-8">{s.desc}</p>
-              <button className="text-emerald-900 font-semibold flex items-center gap-2 hover:text-emerald-500 transition-colors">
-                Learn More <ArrowRight size={18} />
+              <button
+                onClick={() => setCurrentPage(s.page)}
+                className="text-emerald-900 font-semibold flex items-center gap-2 hover:text-emerald-500 transition-colors"
+              >
+                {t.common.learnMore} <ArrowRight size={18} />
               </button>
             </div>
           ))}
@@ -780,20 +879,103 @@ const ServicesPage = () => {
   );
 };
 
-const ProjectsPage = () => {
+const ServiceDetailPage = ({
+  title,
+  subtitle,
+  description,
+  features,
+  outcomes,
+  image,
+  setCurrentPage,
+  t,
+}: {
+  title: string;
+  subtitle: string;
+  description: string;
+  features: string[];
+  outcomes: string[];
+  image: string;
+  setCurrentPage: (p: Page) => void;
+  t: T;
+}) => {
+  return (
+    <div className="pb-24">
+      <section className="relative h-[45vh] flex items-center">
+        <div className="absolute inset-0 z-0">
+          <img src={image} alt={title} className="w-full h-full object-cover brightness-50" />
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-white">
+          <button
+            onClick={() => setCurrentPage('services')}
+            className="mb-8 inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-3 rounded-xl transition-colors"
+          >
+            {t.common.backToServices}
+          </button>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">{title}</h1>
+          <p className="text-lg md:text-xl text-emerald-100 max-w-3xl">{subtitle}</p>
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-emerald-900/5 p-10">
+            <h2 className="text-3xl font-bold text-emerald-900 mb-6">{t.common.overview}</h2>
+            <p className="text-slate-700 text-lg leading-relaxed mb-10">{description}</p>
+
+            <h3 className="text-2xl font-bold text-emerald-900 mb-5">{t.common.whatWeOffer}</h3>
+            <div className="space-y-4 mb-12">
+              {features.map((item, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <CheckCircle size={20} className="text-emerald-500 mt-1 shrink-0" />
+                  <span className="text-slate-700">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <h3 className="text-2xl font-bold text-emerald-900 mb-5">{t.common.expectedOutcomes}</h3>
+            <div className="space-y-4">
+              {outcomes.map((item, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <CheckCircle size={20} className="text-emerald-500 mt-1 shrink-0" />
+                  <span className="text-slate-700">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="bg-[#fcfcf7] rounded-3xl border border-emerald-900/10 p-8">
+              <h3 className="text-2xl font-bold text-emerald-900 mb-4">{t.common.needThisService}</h3>
+              <p className="text-slate-600 mb-6 leading-relaxed">
+                {t.contact.subtitle}
+              </p>
+              <button
+                onClick={() => setCurrentPage('contact')}
+                className="w-full bg-emerald-900 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors"
+              >
+                {t.common.requestThisService}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-3xl shadow-sm border border-emerald-900/5 p-8">
+              <h3 className="text-xl font-bold text-emerald-900 mb-4">{t.common.whyItMatters}</h3>
+              <p className="text-slate-600 leading-relaxed">{t.products.impactText}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+const ProjectsPage = ({ t }: { t: T }) => {
   const projects = [
     {
-      title: 'Circular Demonstration Farm',
-      goal: 'Showcase climate-smart integrated farming',
-      impact: 'Train 50 youth, 30 women, 20 PWD in the first year',
-      activities: 'Crop production, livestock, composting, training workshops',
+      ...t.projects.project1,
       img: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=1000',
     },
     {
-      title: 'Organic Waste to Compost Initiative',
-      goal: 'Transform farm and market waste into compost/fertilizer',
-      impact: 'Reduces pollution, creates green jobs for youth, women, and PWD',
-      activities: 'Waste collection, composting, distribution to farmers',
+      ...t.projects.project2,
       img: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=1000',
     },
   ];
@@ -802,10 +984,8 @@ const ProjectsPage = () => {
     <div className="pb-24">
       <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold text-emerald-900 mb-6">Our Projects</h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            Real-world initiatives making a tangible difference in Rwandan communities.
-          </p>
+          <h1 className="text-5xl font-bold text-emerald-900 mb-6">{t.projects.title}</h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">{t.projects.subtitle}</p>
         </div>
       </section>
 
@@ -819,20 +999,26 @@ const ProjectsPage = () => {
               <h2 className="text-4xl font-bold text-emerald-900 mb-6">{p.title}</h2>
               <div className="space-y-6 mb-10">
                 <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">Goal</h4>
+                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
+                    {t.projects.goal}
+                  </h4>
                   <p className="text-slate-700 text-lg">{p.goal}</p>
                 </div>
                 <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">Impact</h4>
+                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
+                    {t.projects.impact}
+                  </h4>
                   <p className="text-slate-700 text-lg">{p.impact}</p>
                 </div>
                 <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">Activities</h4>
+                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
+                    {t.projects.activities}
+                  </h4>
                   <p className="text-slate-700">{p.activities}</p>
                 </div>
               </div>
               <button className="bg-emerald-900 text-white px-8 py-4 rounded-full font-semibold hover:bg-emerald-800 transition-colors">
-                Support this Project
+                {t.projects.support}
               </button>
             </div>
           </div>
@@ -842,38 +1028,21 @@ const ProjectsPage = () => {
   );
 };
 
-const ImpactPage = () => {
+const ImpactPage = ({ t }: { t: T }) => {
   const metrics = [
-    { label: 'Hectares Farmed', value: '500+' },
-    { label: 'Tons of Compost', value: '200+' },
-    { label: 'Youth Jobs', value: '800+' },
-    { label: 'Women Jobs', value: '600+' },
-    { label: 'PWD Jobs', value: '150+' },
-  ];
-
-  const testimonials = [
-    {
-      quote: 'EcoCycle trained me in climate-smart agriculture — now I run my own micro-farm.',
-      author: 'Jane, Youth Beneficiary',
-    },
-    {
-      quote: 'Through EcoCycle, I learned livestock management and composting — my family income increased.',
-      author: 'Claudine, Woman Beneficiary',
-    },
-    {
-      quote: 'As a PWD, EcoCycle gave me meaningful work and skills in sustainable farming.',
-      author: 'Patrick, PWD Beneficiary',
-    },
+    { label: t.impact.metrics.hectares, value: '500+' },
+    { label: t.impact.metrics.compost, value: '200+' },
+    { label: t.impact.metrics.youth, value: '800+' },
+    { label: t.impact.metrics.women, value: '600+' },
+    { label: t.impact.metrics.pwd, value: '150+' },
   ];
 
   return (
     <div className="pb-24">
       <section className="bg-emerald-900 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold mb-6">Our Impact</h1>
-          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">
-            Measuring our progress in regenerating land and empowering people.
-          </p>
+          <h1 className="text-5xl font-bold mb-6">{t.impact.title}</h1>
+          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">{t.impact.subtitle}</p>
         </div>
       </section>
 
@@ -888,26 +1057,30 @@ const ImpactPage = () => {
         </div>
 
         <div className="bg-[#fcfcf7] rounded-3xl p-12 md:p-24 border border-emerald-900/10">
-          <h2 className="text-3xl font-bold text-emerald-900 text-center mb-16">Stories of Change</h2>
+          <h2 className="text-3xl font-bold text-emerald-900 text-center mb-16">
+            {t.impact.stories}
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {testimonials.map((t, idx) => (
+            {t.impact.testimonials.map((item, idx) => (
               <div key={idx} className="flex flex-col items-center text-center">
                 <div className="text-emerald-500 mb-6">
                   <Heart size={40} />
                 </div>
-                <p className="text-lg text-slate-700 italic mb-6 leading-relaxed">"{t.quote}"</p>
-                <div className="font-bold text-emerald-900">{t.author}</div>
+                <p className="text-lg text-slate-700 italic mb-6 leading-relaxed">
+                  "{item.quote}"
+                </p>
+                <div className="font-bold text-emerald-900">{item.author}</div>
               </div>
             ))}
           </div>
         </div>
 
         <div className="mt-24 text-center">
-          <h2 className="text-3xl font-bold text-emerald-900 mb-12">Circular Agriculture Model</h2>
+          <h2 className="text-3xl font-bold text-emerald-900 mb-12">{t.impact.model}</h2>
           <div className="max-w-4xl mx-auto aspect-[16/9] bg-white rounded-3xl border-2 border-dashed border-emerald-900/20 flex items-center justify-center">
             <div className="text-slate-400 flex flex-col items-center gap-4">
               <Recycle size={64} />
-              <p className="text-xl italic">Infographic: Our Circular Agriculture Model</p>
+              <p className="text-xl italic">{t.impact.infographic}</p>
             </div>
           </div>
         </div>
@@ -916,14 +1089,14 @@ const ImpactPage = () => {
   );
 };
 
-const NewsPage = () => {
+const NewsPage = ({ t }: { t: T }) => {
   return (
     <div className="pb-24">
       <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold text-emerald-900 mb-6">News & Blog</h1>
+          <h1 className="text-5xl font-bold text-emerald-900 mb-6">{t.news.title}</h1>
           <div className="flex justify-center gap-4 mt-8 flex-wrap">
-            {['All', 'Training', 'Projects', 'Impact', 'Media'].map((cat) => (
+            {t.news.categories.map((cat) => (
               <button
                 key={cat}
                 className="px-6 py-2 rounded-full border border-emerald-900/20 text-sm font-medium hover:bg-emerald-900 hover:text-white transition-colors"
@@ -947,16 +1120,17 @@ const NewsPage = () => {
                 />
               </div>
               <div className="p-8">
-                <div className="text-xs text-emerald-500 font-bold uppercase mb-3">Training • March 2026</div>
+                <div className="text-xs text-emerald-500 font-bold uppercase mb-3">
+                  {t.news.cardType}
+                </div>
                 <h3 className="text-2xl font-bold text-emerald-900 mb-4">
-                  Empowering Youth through Climate-Smart Training
+                  {t.news.cardTitle}
                 </h3>
                 <p className="text-slate-600 text-sm mb-6 line-clamp-3">
-                  Last week, EcoCycle Rwanda hosted a workshop for 50 youth participants in Bugesera,
-                  focusing on organic waste management and sustainable farming techniques.
+                  {t.news.cardText}
                 </p>
                 <button className="text-emerald-900 font-bold flex items-center gap-2 hover:text-emerald-500">
-                  Read More <ArrowRight size={18} />
+                  {t.common.readMore} <ArrowRight size={18} />
                 </button>
               </div>
             </div>
@@ -967,47 +1141,47 @@ const NewsPage = () => {
   );
 };
 
-const DonatePage = () => {
+const DonatePage = ({ t }: { t: T }) => {
   return (
     <div className="pb-24">
       <section className="bg-emerald-900 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold mb-6">Get Involved</h1>
-          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">
-            Your support helps us scale our impact and empower more vulnerable communities in Rwanda.
-          </p>
+          <h1 className="text-5xl font-bold mb-6">{t.donate.title}</h1>
+          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">{t.donate.subtitle}</p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div className="bg-white p-12 rounded-3xl shadow-sm border border-emerald-900/5">
-            <h2 className="text-3xl font-bold text-emerald-900 mb-8">Donate Now</h2>
+            <h2 className="text-3xl font-bold text-emerald-900 mb-8">{t.donate.donateNow}</h2>
             <div className="grid grid-cols-2 gap-4 mb-8">
-              {['Youth Programs', 'Women Empowerment', 'PWD Inclusion', 'Environment'].map((opt) => (
+              {t.donate.options.map((opt) => (
                 <button
                   key={opt}
                   className="p-6 border-2 border-emerald-900/10 rounded-2xl text-left hover:border-emerald-500 hover:bg-emerald-500/5 transition-all group"
                 >
-                  <div className="font-bold text-emerald-900 group-hover:text-emerald-500 mb-1">{opt}</div>
-                  <div className="text-xs text-slate-500">Support this initiative</div>
+                  <div className="font-bold text-emerald-900 group-hover:text-emerald-500 mb-1">
+                    {opt}
+                  </div>
+                  <div className="text-xs text-slate-500">{t.donate.supportText}</div>
                 </button>
               ))}
             </div>
             <button className="w-full bg-emerald-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-400 transition-colors">
-              Donate Now
+              {t.donate.donateNow}
             </button>
           </div>
 
           <div className="bg-[#fcfcf7] p-12 rounded-3xl border border-emerald-900/10">
-            <h2 className="text-3xl font-bold text-emerald-900 mb-8">Volunteer Today</h2>
+            <h2 className="text-3xl font-bold text-emerald-900 mb-8">{t.donate.volunteerToday}</h2>
             <form className="space-y-4">
-              <input type="text" placeholder="Full Name" className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <input type="email" placeholder="Email Address" className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <input type="tel" placeholder="Phone Number" className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <textarea placeholder="Your Interests" rows={4} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+              <input type="text" placeholder={t.donate.fullName} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+              <input type="email" placeholder={t.donate.email} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+              <input type="tel" placeholder={t.donate.phone} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+              <textarea placeholder={t.donate.interests} rows={4} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
               <button className="w-full bg-emerald-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-colors" type="button">
-                Volunteer Today
+                {t.donate.volunteerToday}
               </button>
             </form>
           </div>
@@ -1017,16 +1191,15 @@ const DonatePage = () => {
   );
 };
 
-const ProductsPage = () => {
+const ProductsPage = ({ t }: { t: T }) => {
   return (
     <div className="pb-24">
       <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <h1 className="text-5xl font-bold text-emerald-900 mb-6">Our Products & Market Access</h1>
+            <h1 className="text-5xl font-bold text-emerald-900 mb-6">{t.products.title}</h1>
             <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-              EcoCycle Rwanda supplies high-quality planting materials and fresh horticultural produce to local and international markets.
-              Our production systems integrate climate-smart agriculture, circular economy principles, and inclusive employment.
+              {t.products.subtitle}
             </p>
           </motion.div>
         </div>
@@ -1042,43 +1215,36 @@ const ProductsPage = () => {
           >
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-bold uppercase tracking-wider">
               <Sprout size={18} />
-              Nursery Products
+              {t.products.nurseryBadge}
             </div>
-            <h2 className="text-4xl font-bold text-emerald-900">Quality Planting Materials</h2>
-            <p className="text-lg text-slate-600">
-              EcoCycle Rwanda operates professional nurseries producing high-quality planting materials adapted to Rwanda’s agro-ecological conditions.
-            </p>
+            <h2 className="text-4xl font-bold text-emerald-900">{t.products.nurseryTitle}</h2>
+            <p className="text-lg text-slate-600">{t.products.nurseryText}</p>
 
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-emerald-900/5 space-y-6">
-              <h3 className="text-xl font-bold text-emerald-900">Our Nursery Categories:</h3>
+              <h3 className="text-xl font-bold text-emerald-900">{t.products.categoriesTitle}</h3>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  { label: 'Horticultural seedlings', icon: '🌿' },
-                  { label: 'Forest tree seedlings', icon: '🌳' },
-                  { label: 'Agroforestry species', icon: '🌾' },
-                  { label: 'Climate-resilient plants', icon: '🌱' },
-                ].map((item, i) => (
+                {t.products.categories.map((item, i) => (
                   <li key={i} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="font-medium text-slate-700">{item.label}</span>
+                    <span className="text-2xl">🌿</span>
+                    <span className="font-medium text-slate-700">{item}</span>
                   </li>
                 ))}
               </ul>
               <p className="text-slate-600 text-sm italic border-l-4 border-emerald-500 pl-4">
-                All seedlings are produced using sustainable soil management practices and quality-controlled systems to ensure strong root development and high survival rates.
+                {t.products.nurseryNote}
               </p>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-emerald-900">How to Access:</h3>
+              <h3 className="text-xl font-bold text-emerald-900">{t.products.accessTitle}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button className="flex items-center justify-center gap-2 bg-emerald-900 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors">
                   <FileText size={20} />
-                  Request Catalog
+                  {t.products.requestCatalog}
                 </button>
                 <button className="flex items-center justify-center gap-2 border-2 border-emerald-900 text-emerald-900 py-4 rounded-xl font-bold hover:bg-emerald-900 hover:text-white transition-all">
                   <Phone size={20} />
-                  Contact Sales
+                  {t.products.contactSales}
                 </button>
               </div>
             </div>
@@ -1092,17 +1258,15 @@ const ProductsPage = () => {
           >
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-bold uppercase tracking-wider">
               <Package size={18} />
-              Fresh Produce
+              {t.products.freshBadge}
             </div>
-            <h2 className="text-4xl font-bold text-emerald-900">Local & Export Markets</h2>
-            <p className="text-lg text-slate-600">
-              Premium horticulture products produced and supplied for local and international markets following climate-smart agricultural practices.
-            </p>
+            <h2 className="text-4xl font-bold text-emerald-900">{t.products.freshTitle}</h2>
+            <p className="text-lg text-slate-600">{t.products.freshText}</p>
 
             <div className="bg-white p-8 rounded-3xl shadow-sm border border-emerald-900/5 space-y-6">
-              <h3 className="text-xl font-bold text-emerald-900">Key Products:</h3>
+              <h3 className="text-xl font-bold text-emerald-900">{t.products.keyProducts}</h3>
               <div className="flex flex-wrap gap-3">
-                {['🥑 Avocado', '🌶 Chili', '🫘 Green beans', '🍅 Seasonal Fruits'].map((item, i) => (
+                {t.products.productList.map((item, i) => (
                   <span key={i} className="px-6 py-3 bg-slate-50 rounded-full font-bold text-slate-700 border border-slate-100">
                     {item}
                   </span>
@@ -1110,26 +1274,27 @@ const ProductsPage = () => {
               </div>
 
               <div className="space-y-3">
-                <h4 className="font-bold text-emerald-900">Market Compliance:</h4>
+                <h4 className="font-bold text-emerald-900">{t.products.marketCompliance}</h4>
                 <ul className="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-emerald-500" /> Quality grading</li>
-                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-emerald-500" /> Post-harvest standards</li>
-                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-emerald-500" /> Traceability systems</li>
-                  <li className="flex items-center gap-2"><CheckCircle size={14} className="text-emerald-500" /> Proper packaging</li>
+                  {t.products.compliance.map((item, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <CheckCircle size={14} className="text-emerald-500" /> {item}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-emerald-900">Market Information:</h3>
+              <h3 className="text-xl font-bold text-emerald-900">{t.products.marketInfo}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-4 rounded-xl font-bold hover:bg-emerald-600 transition-colors">
                   <ShoppingCart size={20} />
-                  Request Product List
+                  {t.products.requestProductList}
                 </button>
                 <button className="flex items-center justify-center gap-2 border-2 border-emerald-500 text-emerald-500 py-4 rounded-xl font-bold hover:bg-emerald-500 hover:text-white transition-all">
                   <Globe size={20} />
-                  Become a Buyer
+                  {t.products.becomeBuyer}
                 </button>
               </div>
             </div>
@@ -1141,17 +1306,12 @@ const ProductsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-8">Inclusive Impact Statement</h2>
+              <h2 className="text-4xl font-bold mb-8">{t.products.impactTitle}</h2>
               <p className="text-xl text-emerald-100 leading-relaxed mb-8">
-                By sourcing products from EcoCycle Rwanda, buyers contribute directly to sustainable and regenerative agricultural systems while supporting marginalized communities.
+                {t.products.impactText}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {[
-                  'Youth employment & entrepreneurship',
-                  'Women-led agribusiness development',
-                  'Inclusive economic participation for PWD',
-                  'Sustainable & regenerative systems',
-                ].map((item, i) => (
+                {t.products.impactItems.map((item, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-2 h-2 bg-emerald-400 rounded-full" />
                     <span className="font-medium">{item}</span>
@@ -1168,8 +1328,8 @@ const ProductsPage = () => {
                 />
               </div>
               <div className="absolute -bottom-8 -right-8 bg-emerald-400 p-8 rounded-3xl shadow-xl hidden md:block">
-                <p className="text-emerald-950 font-black text-2xl">100% Inclusive</p>
-                <p className="text-emerald-950/80 font-bold">Market Access</p>
+                <p className="text-emerald-950 font-black text-2xl">{t.products.accessTag1}</p>
+                <p className="text-emerald-950/80 font-bold">{t.products.accessTag2}</p>
               </div>
             </div>
           </div>
@@ -1179,15 +1339,13 @@ const ProductsPage = () => {
   );
 };
 
-const ContactPage = () => {
+const ContactPage = ({ t }: { t: T }) => {
   return (
     <div className="pb-24">
       <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold text-emerald-900 mb-6">Contact Us</h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-            We'd love to hear from you. Reach out for collaborations, inquiries, or support.
-          </p>
+          <h1 className="text-5xl font-bold text-emerald-900 mb-6">{t.contact.title}</h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">{t.contact.subtitle}</p>
         </div>
       </section>
 
@@ -1195,49 +1353,49 @@ const ContactPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
           <div className="lg:col-span-1 space-y-12">
             <div>
-              <h3 className="text-xl font-bold text-emerald-900 mb-6">Contact Details</h3>
+              <h3 className="text-xl font-bold text-emerald-900 mb-6">{t.contact.details}</h3>
               <ul className="space-y-6">
                 <li className="flex gap-4 items-start">
                   <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MapPin size={24} /></div>
                   <div>
-                    <div className="font-bold">Address</div>
-                    <div className="text-slate-600">Bugesera District, Rwanda</div>
+                    <div className="font-bold">{t.contact.address}</div>
+                    <div className="text-slate-600">{t.footer.address}</div>
                   </div>
                 </li>
                 <li className="flex gap-4 items-start">
                   <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Phone size={24} /></div>
                   <div>
-                    <div className="font-bold">Phone</div>
+                    <div className="font-bold">{t.contact.phone}</div>
                     <a href="tel:+250788963938" className="text-slate-600 hover:text-emerald-500 transition-colors">
-                      +250 788 963 938
+                      {t.topbar.phone}
                     </a>
                   </div>
                 </li>
                 <li className="flex gap-4 items-start">
                   <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MessageCircle size={24} /></div>
                   <div>
-                    <div className="font-bold">WhatsApp</div>
+                    <div className="font-bold">{t.contact.whatsapp}</div>
                     <a
                       href="https://wa.me/250788963938"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-slate-600 hover:text-emerald-500 transition-colors"
                     >
-                      +250 788 963 938
+                      {t.topbar.phone}
                     </a>
                   </div>
                 </li>
                 <li className="flex gap-4 items-start">
                   <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Mail size={24} /></div>
                   <div>
-                    <div className="font-bold">Email</div>
-                    <div className="text-slate-600">ecocyclerwandaltd@gmail.com</div>
+                    <div className="font-bold">{t.contact.email}</div>
+                    <div className="text-slate-600">{t.topbar.email}</div>
                   </div>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="text-xl font-bold text-emerald-900 mb-6">Follow Us</h3>
+              <h3 className="text-xl font-bold text-emerald-900 mb-6">{t.contact.follow}</h3>
               <div className="flex gap-4">
                 <a href="https://www.facebook.com/EcoCycleRwanda" target="_blank" rel="noopener noreferrer" className="p-4 bg-white shadow-sm border border-emerald-900/5 rounded-2xl hover:text-emerald-500 transition-colors"><Facebook /></a>
                 <a href="https://www.instagram.com/ecocyclerwanda" target="_blank" rel="noopener noreferrer" className="p-4 bg-white shadow-sm border border-emerald-900/5 rounded-2xl hover:text-emerald-500 transition-colors"><Instagram /></a>
@@ -1249,14 +1407,14 @@ const ContactPage = () => {
 
           <div className="lg:col-span-2">
             <div className="bg-white p-12 rounded-3xl shadow-sm border border-emerald-900/5">
-              <h3 className="text-2xl font-bold text-emerald-900 mb-8">Send a Message</h3>
+              <h3 className="text-2xl font-bold text-emerald-900 mb-8">{t.contact.formTitle}</h3>
               <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input type="text" placeholder="Your Name" className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <input type="email" placeholder="Your Email" className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <input type="tel" placeholder="Phone Number" className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <textarea placeholder="Your Message" rows={6} className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+                <input type="text" placeholder={t.contact.yourName} className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+                <input type="email" placeholder={t.contact.yourEmail} className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+                <input type="tel" placeholder={t.contact.phoneNumber} className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
+                <textarea placeholder={t.contact.yourMessage} rows={6} className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
                 <button type="button" className="md:col-span-2 bg-emerald-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-colors">
-                  Send Message
+                  {t.common.sendMessage}
                 </button>
               </form>
             </div>
@@ -1267,7 +1425,7 @@ const ContactPage = () => {
   );
 };
 
-const PartnersPage = () => {
+const PartnersPage = ({ t }: { t: T }) => {
   return (
     <div className="pb-24">
       <section className="bg-emerald-900 text-white py-32 relative overflow-hidden">
@@ -1276,17 +1434,19 @@ const PartnersPage = () => {
           <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-400 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-          <h1 className="text-6xl font-bold mb-8">Partners & Supporters</h1>
+          <h1 className="text-6xl font-bold mb-8">{t.partners.title}</h1>
           <p className="text-xl text-emerald-100 max-w-3xl mx-auto leading-relaxed">
-            EcoCycle Rwanda collaborates with government agencies, NGOs, donors, and cooperatives to scale sustainable agricultural solutions and empower youth, women, and PWD.
+            {t.partners.subtitle}
           </p>
         </div>
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
         <div className="text-center mb-24">
-          <span className="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">Our Network</span>
-          <h2 className="text-4xl font-bold text-emerald-900">Building a Sustainable Ecosystem Together</h2>
+          <span className="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">
+            {t.partners.network}
+          </span>
+          <h2 className="text-4xl font-bold text-emerald-900">{t.partners.ecosystem}</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -1296,18 +1456,18 @@ const PartnersPage = () => {
               className="bg-white p-12 rounded-[2rem] shadow-sm border border-emerald-900/5 flex items-center justify-center group hover:shadow-xl transition-all duration-500"
             >
               <div className="w-full aspect-video bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 font-bold text-lg group-hover:text-emerald-900 transition-colors">
-                PARTNER {i}
+                {t.partners.partner} {i}
               </div>
             </motion.div>
           ))}
         </div>
         <div className="mt-32 bg-[#fcfcf7] rounded-[3rem] p-16 md:p-24 text-center border border-emerald-900/5">
-          <h3 className="text-4xl font-bold text-emerald-900 mb-8">Interested in collaborating?</h3>
+          <h3 className="text-4xl font-bold text-emerald-900 mb-8">{t.partners.collaborationTitle}</h3>
           <p className="text-slate-600 max-w-2xl mx-auto mb-12 text-lg">
-            Join our mission to transform agriculture in Rwanda. We are always looking for partners who share our vision for a sustainable and inclusive future.
+            {t.partners.collaborationText}
           </p>
           <button className="bg-emerald-500 text-white px-12 py-5 rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-lg">
-            Become a Partner
+            {t.partners.becomePartner}
           </button>
         </div>
       </section>
@@ -1317,42 +1477,184 @@ const PartnersPage = () => {
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [showSplash, setShowSplash] = useState(true);
+  const [language, setLanguage] = useState<Language | null>(null);
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('site-language') as Language | null;
+    if (savedLanguage === 'en' || savedLanguage === 'rw' || savedLanguage === 'fr') {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [currentPage]);
 
+  useEffect(() => {
+    if (language) {
+      localStorage.setItem('site-language', language);
+    }
+  }, [language]);
+
+  const safeLanguage: Language = language ?? 'en';
+  const t = translations[safeLanguage];
+
+  useEffect(() => {
+    if (!language) return;
+
+    const titles: Record<Page, string> = {
+      home: `EcoCycle Rwanda`,
+      about: `${t.nav.about} - EcoCycle Rwanda`,
+      services: `${t.nav.services} - EcoCycle Rwanda`,
+      products: `${t.nav.products} - EcoCycle Rwanda`,
+      projects: `${t.nav.projects} - EcoCycle Rwanda`,
+      impact: `${t.nav.impact} - EcoCycle Rwanda`,
+      partners: `${t.nav.partners} - EcoCycle Rwanda`,
+      news: `${t.nav.news} - EcoCycle Rwanda`,
+      donate: `${t.nav.donate} - EcoCycle Rwanda`,
+      contact: `${t.nav.contact} - EcoCycle Rwanda`,
+      'service-farming': `${t.servicesPage.cards.farming.title} - EcoCycle Rwanda`,
+      'service-climate': `${t.servicesPage.cards.climate.title} - EcoCycle Rwanda`,
+      'service-circular': `${t.servicesPage.cards.circular.title} - EcoCycle Rwanda`,
+      'service-export': `${t.servicesPage.cards.export.title} - EcoCycle Rwanda`,
+      'service-empowerment': `${t.servicesPage.cards.empowerment.title} - EcoCycle Rwanda`,
+    };
+    document.title = titles[currentPage];
+  }, [currentPage, language, t]);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
+
+  if (!language) {
+    return <LanguageSelector onSelect={setLanguage} />;
+  }
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} />;
+        return <HomePage setCurrentPage={setCurrentPage} t={t} />;
+
       case 'about':
-        return <AboutPage />;
+        return <AboutPage t={t} />;
+
       case 'services':
-        return <ServicesPage />;
+        return <ServicesPage setCurrentPage={setCurrentPage} t={t} />;
+
+      case 'service-farming':
+        return (
+          <ServiceDetailPage
+            title={t.serviceDetails.farming.title}
+            subtitle={t.serviceDetails.farming.subtitle}
+            description={t.serviceDetails.farming.description}
+            features={[...t.serviceDetails.farming.features]}
+            outcomes={[...t.serviceDetails.farming.outcomes]}
+            image="https://images.unsplash.com/photo-1464226184884-fa280b87c399?auto=format&fit=crop&q=80&w=1600"
+            setCurrentPage={setCurrentPage}
+            t={t}
+          />
+        );
+
+      case 'service-climate':
+        return (
+          <ServiceDetailPage
+            title={t.serviceDetails.climate.title}
+            subtitle={t.serviceDetails.climate.subtitle}
+            description={t.serviceDetails.climate.description}
+            features={[...t.serviceDetails.climate.features]}
+            outcomes={[...t.serviceDetails.climate.outcomes]}
+            image="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&q=80&w=1600"
+            setCurrentPage={setCurrentPage}
+            t={t}
+          />
+        );
+
+      case 'service-circular':
+        return (
+          <ServiceDetailPage
+            title={t.serviceDetails.circular.title}
+            subtitle={t.serviceDetails.circular.subtitle}
+            description={t.serviceDetails.circular.description}
+            features={[...t.serviceDetails.circular.features]}
+            outcomes={[...t.serviceDetails.circular.outcomes]}
+            image="https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&q=80&w=1600"
+            setCurrentPage={setCurrentPage}
+            t={t}
+          />
+        );
+
+      case 'service-export':
+        return (
+          <ServiceDetailPage
+            title={t.serviceDetails.export.title}
+            subtitle={t.serviceDetails.export.subtitle}
+            description={t.serviceDetails.export.description}
+            features={[...t.serviceDetails.export.features]}
+            outcomes={[...t.serviceDetails.export.outcomes]}
+            image="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&q=80&w=1600"
+            setCurrentPage={setCurrentPage}
+            t={t}
+          />
+        );
+
+      case 'service-empowerment':
+        return (
+          <ServiceDetailPage
+            title={t.serviceDetails.empowerment.title}
+            subtitle={t.serviceDetails.empowerment.subtitle}
+            description={t.serviceDetails.empowerment.description}
+            features={[...t.serviceDetails.empowerment.features]}
+            outcomes={[...t.serviceDetails.empowerment.outcomes]}
+            image="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1600"
+            setCurrentPage={setCurrentPage}
+            t={t}
+          />
+        );
+
       case 'projects':
-        return <ProjectsPage />;
+        return <ProjectsPage t={t} />;
+
       case 'impact':
-        return <ImpactPage />;
+        return <ImpactPage t={t} />;
+
       case 'partners':
-        return <PartnersPage />;
+        return <PartnersPage t={t} />;
+
       case 'news':
-        return <NewsPage />;
+        return <NewsPage t={t} />;
+
       case 'donate':
-        return <DonatePage />;
+        return <DonatePage t={t} />;
+
       case 'products':
-        return <ProductsPage />;
+        return <ProductsPage t={t} />;
+
       case 'contact':
-        return <ContactPage />;
+        return <ContactPage t={t} />;
+
       default:
-        return <HomePage setCurrentPage={setCurrentPage} />;
+        return <HomePage setCurrentPage={setCurrentPage} t={t} />;
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopBar />
-      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} />
+      <TopBar t={t} />
+      <Navbar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        t={t}
+        language={language}
+        setLanguage={setLanguage}
+      />
 
       <main className="flex-grow">
         <AnimatePresence mode="wait">
@@ -1368,7 +1670,7 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <Footer setCurrentPage={setCurrentPage} />
+      <Footer setCurrentPage={setCurrentPage} t={t} />
     </div>
   );
 }
