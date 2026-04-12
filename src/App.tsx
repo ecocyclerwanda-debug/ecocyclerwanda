@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
@@ -29,24 +29,93 @@ import {
   ShoppingCart,
   FileText,
   CheckCircle,
+  PlayCircle,
+  ExternalLink,
 } from 'lucide-react';
-import { Page, NavItem } from './types';
+import {
+  Page,
+  NavItem,
+  LeaderItem,
+  ProjectItem,
+  ProductItem,
+  PartnerItem,
+  ImpactStoryItem,
+} from './types';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import SplashScreen from './components/SplashScreen';
 import LanguageSelector from './components/LanguageSelector';
+import HomeNewsSection from './components/HomeNewsSection';
+import NewsPageContent from './components/NewsPageContent';
+import ContactForm from './components/ContactForm';
+import DonateRequestForm from './components/DonateRequestForm';
+import AdminPageContent from './components/AdminPageContent';
+import { startLeadersPolling } from './services/leadersService';
+import { startProjectsPolling } from './services/projectsService';
+import { startProductsPolling } from './services/productsService';
+import { startPartnersPolling } from './services/partnersService';
+import { startImpactStoriesPolling } from './services/impactsService';
 import { translations, type Language } from './i18n';
 
 import logoImg from './assets/logo.png';
-import samImg from './assets/sam.jpg';
-import winnerImg from './assets/winner.jpg';
-import aurelieImg from './assets/aurelie.jpg';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 type T = (typeof translations)[Language];
+
+function getLocalizedLeader(item: LeaderItem, language: Language) {
+  const current = item.translations[language];
+  const fallback = item.translations.en;
+
+  return {
+    role: current.role || fallback.role,
+    bio: current.bio || fallback.bio,
+  };
+}
+
+function getLocalizedProject(item: ProjectItem, language: Language) {
+  const current = item.translations[language];
+  const fallback = item.translations.en;
+
+  return {
+    title: current.title || fallback.title,
+    goal: current.goal || fallback.goal,
+    impact: current.impact || fallback.impact,
+    activities: current.activities || fallback.activities,
+  };
+}
+
+function getLocalizedProduct(item: ProductItem, language: Language) {
+  const current = item.translations[language];
+  const fallback = item.translations.en;
+
+  return {
+    name: current.name || fallback.name,
+    description: current.description || fallback.description,
+    category: current.category || fallback.category,
+  };
+}
+
+function getLocalizedPartner(item: PartnerItem, language: Language) {
+  const current = item.translations[language];
+  const fallback = item.translations.en;
+
+  return {
+    description: current.description || fallback.description,
+  };
+}
+
+function getLocalizedImpact(item: ImpactStoryItem, language: Language) {
+  const current = item.translations[language];
+  const fallback = item.translations.en;
+
+  return {
+    role: current.role || fallback.role,
+    quote: current.quote || fallback.quote,
+  };
+}
 
 const TopBar = ({ t }: { t: T }) => {
   return (
@@ -137,6 +206,7 @@ const Navbar = ({
   setLanguage: (l: Language) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [logoClicks, setLogoClicks] = useState(0);
 
   const navItems: NavItem[] = [
     { label: t.nav.home, id: 'home' },
@@ -157,7 +227,17 @@ const Navbar = ({
         <div className="flex justify-between h-20">
           <div
             className="flex items-center cursor-pointer group"
-            onClick={() => setCurrentPage('home')}
+            onClick={() => {
+              const next = logoClicks + 1;
+              if (next >= 5) {
+                setCurrentPage('admin');
+                setLogoClicks(0);
+              } else {
+                setCurrentPage('home');
+                setLogoClicks(next);
+                window.setTimeout(() => setLogoClicks(0), 2000);
+              }
+            }}
           >
             <img
               src={logoImg}
@@ -183,39 +263,20 @@ const Navbar = ({
             ))}
 
             <div className="flex items-center gap-1 border border-emerald-900/15 rounded-xl p-1">
-              <button
-                onClick={() => setLanguage('en')}
-                className={cn(
-                  'px-2 py-1 text-xs rounded-lg font-bold',
-                  language === 'en'
-                    ? 'bg-emerald-900 text-white'
-                    : 'text-emerald-900 hover:bg-emerald-50'
-                )}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLanguage('rw')}
-                className={cn(
-                  'px-2 py-1 text-xs rounded-lg font-bold',
-                  language === 'rw'
-                    ? 'bg-emerald-900 text-white'
-                    : 'text-emerald-900 hover:bg-emerald-50'
-                )}
-              >
-                RW
-              </button>
-              <button
-                onClick={() => setLanguage('fr')}
-                className={cn(
-                  'px-2 py-1 text-xs rounded-lg font-bold',
-                  language === 'fr'
-                    ? 'bg-emerald-900 text-white'
-                    : 'text-emerald-900 hover:bg-emerald-50'
-                )}
-              >
-                FR
-              </button>
+              {(['en', 'rw', 'fr'] as Language[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLanguage(l)}
+                  className={cn(
+                    'px-2 py-1 text-xs rounded-lg font-bold',
+                    language === l
+                      ? 'bg-emerald-900 text-white'
+                      : 'text-emerald-900 hover:bg-emerald-50'
+                  )}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
             </div>
 
             <button
@@ -262,74 +323,27 @@ const Navbar = ({
               ))}
 
               <div className="flex justify-center gap-2 py-4 border-t border-emerald-900/5 mt-4">
-                <button
-                  onClick={() => setLanguage('en')}
-                  className={cn(
-                    'px-3 py-2 text-sm rounded-lg font-bold',
-                    language === 'en'
-                      ? 'bg-emerald-900 text-white'
-                      : 'border border-emerald-900/15 text-emerald-900'
-                  )}
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => setLanguage('rw')}
-                  className={cn(
-                    'px-3 py-2 text-sm rounded-lg font-bold',
-                    language === 'rw'
-                      ? 'bg-emerald-900 text-white'
-                      : 'border border-emerald-900/15 text-emerald-900'
-                  )}
-                >
-                  RW
-                </button>
-                <button
-                  onClick={() => setLanguage('fr')}
-                  className={cn(
-                    'px-3 py-2 text-sm rounded-lg font-bold',
-                    language === 'fr'
-                      ? 'bg-emerald-900 text-white'
-                      : 'border border-emerald-900/15 text-emerald-900'
-                  )}
-                >
-                  FR
-                </button>
+                {(['en', 'rw', 'fr'] as Language[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLanguage(l)}
+                    className={cn(
+                      'px-3 py-2 text-sm rounded-lg font-bold',
+                      language === l
+                        ? 'bg-emerald-900 text-white'
+                        : 'border border-emerald-900/15 text-emerald-900'
+                    )}
+                  >
+                    {l.toUpperCase()}
+                  </button>
+                ))}
               </div>
 
               <div className="flex justify-center gap-8 py-6 border-t border-emerald-900/5 mt-4">
-                <a
-                  href="https://www.facebook.com/EcoCycleRwanda"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-900 hover:text-emerald-500 transition-colors"
-                >
-                  <Facebook size={24} />
-                </a>
-                <a
-                  href="https://www.instagram.com/ecocyclerwanda"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-900 hover:text-emerald-500 transition-colors"
-                >
-                  <Instagram size={24} />
-                </a>
-                <a
-                  href="https://www.linkedin.com/company/ecocyclerwanda"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-900 hover:text-emerald-500 transition-colors"
-                >
-                  <Linkedin size={24} />
-                </a>
-                <a
-                  href="https://x.com/EcoCycleRwanda"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-900 hover:text-emerald-500 transition-colors"
-                >
-                  <Twitter size={24} />
-                </a>
+                <a href="https://www.facebook.com/EcoCycleRwanda" target="_blank" rel="noopener noreferrer" className="text-emerald-900 hover:text-emerald-500 transition-colors"><Facebook size={24} /></a>
+                <a href="https://www.instagram.com/ecocyclerwanda" target="_blank" rel="noopener noreferrer" className="text-emerald-900 hover:text-emerald-500 transition-colors"><Instagram size={24} /></a>
+                <a href="https://www.linkedin.com/company/ecocyclerwanda" target="_blank" rel="noopener noreferrer" className="text-emerald-900 hover:text-emerald-500 transition-colors"><Linkedin size={24} /></a>
+                <a href="https://x.com/EcoCycleRwanda" target="_blank" rel="noopener noreferrer" className="text-emerald-900 hover:text-emerald-500 transition-colors"><Twitter size={24} /></a>
               </div>
             </div>
           </motion.div>
@@ -355,112 +369,39 @@ const Footer = ({
               <img
                 src={logoImg}
                 alt="EcoCycle Rwanda Logo"
-                className="h-16 w-auto brightness-0 invert"
+                className="h-16 w-auto"
               />
             </div>
             <p className="text-slate-300 text-sm leading-relaxed mb-6">
               {t.footer.description}
             </p>
             <div className="flex gap-4">
-              <a
-                href="https://www.facebook.com/EcoCycleRwanda"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"
-              >
-                <Facebook size={18} />
-              </a>
-              <a
-                href="https://www.instagram.com/ecocyclerwanda"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"
-              >
-                <Instagram size={18} />
-              </a>
-              <a
-                href="https://www.linkedin.com/company/ecocyclerwanda"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"
-              >
-                <Linkedin size={18} />
-              </a>
-              <a
-                href="https://x.com/EcoCycleRwanda"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"
-              >
-                <Twitter size={18} />
-              </a>
+              <a href="https://www.facebook.com/EcoCycleRwanda" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"><Facebook size={18} /></a>
+              <a href="https://www.instagram.com/ecocyclerwanda" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"><Instagram size={18} /></a>
+              <a href="https://www.linkedin.com/company/ecocyclerwanda" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"><Linkedin size={18} /></a>
+              <a href="https://x.com/EcoCycleRwanda" target="_blank" rel="noopener noreferrer" className="p-2 bg-white/10 rounded-full hover:bg-emerald-500 transition-colors"><Twitter size={18} /></a>
             </div>
           </div>
 
           <div>
             <h4 className="text-lg font-semibold mb-6">{t.footer.quickLinks}</h4>
             <ul className="space-y-3 text-slate-300 text-sm">
-              <li>
-                <button onClick={() => setCurrentPage('about')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.about}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('services')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.services}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('products')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.products}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('projects')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.projects}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('donate')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.donate}
-                </button>
-              </li>
-              <li>
-                <button onClick={() => setCurrentPage('contact')} className="hover:text-emerald-400 transition-colors">
-                  {t.nav.contact}
-                </button>
-              </li>
+              <li><button onClick={() => setCurrentPage('about')} className="hover:text-emerald-400 transition-colors">{t.nav.about}</button></li>
+              <li><button onClick={() => setCurrentPage('services')} className="hover:text-emerald-400 transition-colors">{t.nav.services}</button></li>
+              <li><button onClick={() => setCurrentPage('products')} className="hover:text-emerald-400 transition-colors">{t.nav.products}</button></li>
+              <li><button onClick={() => setCurrentPage('projects')} className="hover:text-emerald-400 transition-colors">{t.nav.projects}</button></li>
+              <li><button onClick={() => setCurrentPage('donate')} className="hover:text-emerald-400 transition-colors">{t.nav.donate}</button></li>
+              <li><button onClick={() => setCurrentPage('contact')} className="hover:text-emerald-400 transition-colors">{t.nav.contact}</button></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-lg font-semibold mb-6">{t.footer.contactInfo}</h4>
             <ul className="space-y-4 text-slate-300 text-sm">
-              <li className="flex gap-3 items-start">
-                <MapPin size={18} className="text-emerald-400 shrink-0" />
-                <span>{t.footer.address}</span>
-              </li>
-              <li className="flex gap-3 items-center">
-                <Phone size={18} className="text-emerald-400 shrink-0" />
-                <a href="tel:+250788963938" className="hover:text-emerald-400 transition-colors">
-                  {t.topbar.phone}
-                </a>
-              </li>
-              <li className="flex gap-3 items-center">
-                <MessageCircle size={18} className="text-emerald-400 shrink-0" />
-                <a
-                  href="https://wa.me/250788963938"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-emerald-400 transition-colors"
-                >
-                  {t.footer.whatsappUs}
-                </a>
-              </li>
-              <li className="flex gap-3 items-center">
-                <Mail size={18} className="text-emerald-400 shrink-0" />
-                <span>{t.topbar.email}</span>
-              </li>
+              <li className="flex gap-3 items-start"><MapPin size={18} className="text-emerald-400 shrink-0" /><span>{t.footer.address}</span></li>
+              <li className="flex gap-3 items-center"><Phone size={18} className="text-emerald-400 shrink-0" /><a href="tel:+250788963938" className="hover:text-emerald-400 transition-colors">{t.topbar.phone}</a></li>
+              <li className="flex gap-3 items-center"><MessageCircle size={18} className="text-emerald-400 shrink-0" /><a href="https://wa.me/250788963938" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition-colors">{t.footer.whatsappUs}</a></li>
+              <li className="flex gap-3 items-center"><Mail size={18} className="text-emerald-400 shrink-0" /><span>{t.topbar.email}</span></li>
             </ul>
           </div>
 
@@ -484,9 +425,7 @@ const Footer = ({
         </div>
 
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs">
-          <p>
-            © {new Date().getFullYear()} EcoCycle Rwanda. {t.footer.rights}
-          </p>
+          <p>© {new Date().getFullYear()} EcoCycle Rwanda. {t.footer.rights}</p>
           <p>{t.footer.tagline}</p>
         </div>
       </div>
@@ -497,9 +436,11 @@ const Footer = ({
 const HomePage = ({
   setCurrentPage,
   t,
+  language,
 }: {
   setCurrentPage: (p: Page) => void;
   t: T;
+  language: Language;
 }) => {
   const stats = [
     { label: t.home.stats.soil, value: '500+' },
@@ -646,81 +587,26 @@ const HomePage = ({
         </div>
       </section>
 
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
-          <div>
-            <span className="text-emerald-500 font-bold tracking-widest uppercase text-sm mb-4 block">
-              {t.common.latestUpdates}
-            </span>
-            <h2 className="text-5xl font-bold text-emerald-900">{t.home.newsTitle}</h2>
-          </div>
-          <button
-            onClick={() => setCurrentPage('news')}
-            className="hidden md:flex items-center gap-3 text-emerald-900 font-bold hover:text-emerald-500 group"
-          >
-            {t.common.exploreAllNews}
-            <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {[1, 2, 3].map((i) => (
-            <motion.div key={i} whileHover={{ y: -10 }} className="group cursor-pointer">
-              <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden mb-8 relative">
-                <img
-                  src={`https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=800&sig=${i}`}
-                  alt="News"
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-8">
-                  <span className="text-white font-bold flex items-center gap-2">
-                    {t.home.readArticle} <ArrowRight size={18} />
-                  </span>
-                </div>
-                <div className="absolute top-6 left-6 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl text-emerald-900 text-xs font-bold shadow-lg">
-                  MARCH {i}, 2026
-                </div>
-              </div>
-              <h3 className="text-2xl font-bold text-emerald-900 mb-4 group-hover:text-emerald-500 transition-colors leading-tight">
-                {t.home.newsCardTitle}
-              </h3>
-              <p className="text-slate-500 leading-relaxed line-clamp-2">
-                {t.home.newsCardText}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-        <button
-          onClick={() => setCurrentPage('news')}
-          className="md:hidden mt-12 w-full py-5 bg-emerald-900 text-white rounded-2xl font-bold"
-        >
-          {t.common.viewAllNews}
-        </button>
-      </section>
+      <HomeNewsSection t={t} language={language} setCurrentPage={setCurrentPage} />
     </div>
   );
 };
 
-const AboutPage = ({ t }: { t: T }) => {
-  const leaders = [
-    {
-      name: 'Eng. Samuel NIYIBIZI',
-      role: 'Chief Executive Officer',
-      bio: 'A visionary leader and professional engineer dedicated to transforming agriculture through sustainable innovation and inclusive growth.',
-      image: samImg,
-    },
-    {
-      name: 'SHAMI Winner Igor',
-      role: 'Operations Director',
-      bio: 'Expert in circular economy and community engagement.',
-      image: winnerImg,
-    },
-    {
-      name: 'Aurelie NYIRANSABMANA',
-      role: 'Inclusion Specialist',
-      bio: 'Focus on empowering women, youth, and persons with disabilities in farming.',
-      image: aurelieImg,
-    },
-  ];
+const AboutPage = ({
+  t,
+  language,
+}: {
+  t: T;
+  language: Language;
+}) => {
+  const [leaders, setLeaders] = useState<LeaderItem[]>([]);
+
+  useEffect(() => {
+    const stop = startLeadersPolling((items) => {
+      setLeaders(items.filter((item) => item.active));
+    });
+    return stop;
+  }, []);
 
   return (
     <div className="pb-24">
@@ -777,27 +663,36 @@ const AboutPage = ({ t }: { t: T }) => {
             <h2 className="text-4xl font-bold text-emerald-900 mb-4">{t.about.leadership}</h2>
             <p className="text-slate-500">{t.about.leadershipText}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-            {leaders.map((member, idx) => (
-              <div
-                key={idx}
-                className="bg-white rounded-3xl overflow-hidden shadow-sm border border-emerald-900/5 group hover:shadow-xl transition-all duration-500"
-              >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                </div>
-                <div className="p-8">
-                  <h3 className="text-2xl font-bold text-emerald-900 mb-1">{member.name}</h3>
-                  <div className="text-emerald-500 font-medium mb-4">{member.role}</div>
-                  <p className="text-slate-600 text-sm leading-relaxed">{member.bio}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+
+          {leaders.length === 0 ? (
+            <div className="text-center text-slate-500 mb-12">No leaders added yet.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+              {leaders.map((member) => {
+                const text = getLocalizedLeader(member, language);
+
+                return (
+                  <div
+                    key={member.id}
+                    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-emerald-900/5 group hover:shadow-xl transition-all duration-500"
+                  >
+                    <div className="aspect-square overflow-hidden">
+                      <img
+                        src={member.imageUrl}
+                        alt={member.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    </div>
+                    <div className="p-8">
+                      <h3 className="text-2xl font-bold text-emerald-900 mb-1">{member.name}</h3>
+                      <div className="text-emerald-500 font-medium mb-4">{text.role}</div>
+                      <p className="text-slate-600 text-sm leading-relaxed">{text.bio}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
     </div>
@@ -812,36 +707,11 @@ const ServicesPage = ({
   t: T;
 }) => {
   const services = [
-    {
-      title: t.servicesPage.cards.farming.title,
-      desc: t.servicesPage.cards.farming.desc,
-      icon: <Sprout className="w-10 h-10" />,
-      page: 'service-farming' as Page,
-    },
-    {
-      title: t.servicesPage.cards.climate.title,
-      desc: t.servicesPage.cards.climate.desc,
-      icon: <Zap className="w-10 h-10" />,
-      page: 'service-climate' as Page,
-    },
-    {
-      title: t.servicesPage.cards.circular.title,
-      desc: t.servicesPage.cards.circular.desc,
-      icon: <Recycle className="w-10 h-10" />,
-      page: 'service-circular' as Page,
-    },
-    {
-      title: t.servicesPage.cards.export.title,
-      desc: t.servicesPage.cards.export.desc,
-      icon: <Globe className="w-10 h-10" />,
-      page: 'service-export' as Page,
-    },
-    {
-      title: t.servicesPage.cards.empowerment.title,
-      desc: t.servicesPage.cards.empowerment.desc,
-      icon: <Users className="w-10 h-10" />,
-      page: 'service-empowerment' as Page,
-    },
+    { title: t.servicesPage.cards.farming.title, desc: t.servicesPage.cards.farming.desc, icon: <Sprout className="w-10 h-10" />, page: 'service-farming' as Page },
+    { title: t.servicesPage.cards.climate.title, desc: t.servicesPage.cards.climate.desc, icon: <Zap className="w-10 h-10" />, page: 'service-climate' as Page },
+    { title: t.servicesPage.cards.circular.title, desc: t.servicesPage.cards.circular.desc, icon: <Recycle className="w-10 h-10" />, page: 'service-circular' as Page },
+    { title: t.servicesPage.cards.export.title, desc: t.servicesPage.cards.export.desc, icon: <Globe className="w-10 h-10" />, page: 'service-export' as Page },
+    { title: t.servicesPage.cards.empowerment.title, desc: t.servicesPage.cards.empowerment.desc, icon: <Users className="w-10 h-10" />, page: 'service-empowerment' as Page },
   ];
 
   return (
@@ -849,9 +719,7 @@ const ServicesPage = ({
       <section className="bg-emerald-900 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-5xl font-bold mb-6">{t.servicesPage.title}</h1>
-          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">
-            {t.servicesPage.subtitle}
-          </p>
+          <p className="text-xl text-emerald-100 max-w-2xl mx-auto">{t.servicesPage.subtitle}</p>
         </div>
       </section>
 
@@ -946,9 +814,7 @@ const ServiceDetailPage = ({
           <div className="space-y-8">
             <div className="bg-[#fcfcf7] rounded-3xl border border-emerald-900/10 p-8">
               <h3 className="text-2xl font-bold text-emerald-900 mb-4">{t.common.needThisService}</h3>
-              <p className="text-slate-600 mb-6 leading-relaxed">
-                {t.contact.subtitle}
-              </p>
+              <p className="text-slate-600 mb-6 leading-relaxed">{t.contact.subtitle}</p>
               <button
                 onClick={() => setCurrentPage('contact')}
                 className="w-full bg-emerald-900 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors"
@@ -968,17 +834,28 @@ const ServiceDetailPage = ({
   );
 };
 
-const ProjectsPage = ({ t }: { t: T }) => {
-  const projects = [
-    {
-      ...t.projects.project1,
-      img: 'https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=1000',
-    },
-    {
-      ...t.projects.project2,
-      img: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=1000',
-    },
-  ];
+const ProjectsPage = ({
+  t,
+  language,
+  setCurrentPage,
+}: {
+  t: T;
+  language: Language;
+  setCurrentPage: (p: Page) => void;
+}) => {
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const stop = startProjectsPolling(
+      (items) => {
+        setProjects(items.filter((item) => item.active));
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return stop;
+  }, []);
 
   return (
     <div className="pb-24">
@@ -990,52 +867,72 @@ const ProjectsPage = ({ t }: { t: T }) => {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 space-y-24">
-        {projects.map((p, idx) => (
-          <div key={idx} className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className={cn(idx % 2 !== 0 && 'lg:order-2')}>
-              <img src={p.img} alt={p.title} className="rounded-3xl shadow-2xl" />
-            </div>
-            <div className={cn(idx % 2 !== 0 && 'lg:order-1')}>
-              <h2 className="text-4xl font-bold text-emerald-900 mb-6">{p.title}</h2>
-              <div className="space-y-6 mb-10">
-                <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
-                    {t.projects.goal}
-                  </h4>
-                  <p className="text-slate-700 text-lg">{p.goal}</p>
+        {loading ? (
+          <div className="text-center text-slate-500">Loading projects...</div>
+        ) : projects.length === 0 ? (
+          <div className="text-center text-slate-500">No projects added yet.</div>
+        ) : (
+          projects.map((project, idx) => {
+            const text = getLocalizedProject(project, language);
+
+            return (
+              <div key={project.id} className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className={cn(idx % 2 !== 0 && 'lg:order-2')}>
+                  <img src={project.imageUrl} alt={text.title} className="rounded-3xl shadow-2xl w-full h-auto object-cover" />
                 </div>
-                <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
-                    {t.projects.impact}
-                  </h4>
-                  <p className="text-slate-700 text-lg">{p.impact}</p>
-                </div>
-                <div>
-                  <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">
-                    {t.projects.activities}
-                  </h4>
-                  <p className="text-slate-700">{p.activities}</p>
+
+                <div className={cn(idx % 2 !== 0 && 'lg:order-1')}>
+                  <h2 className="text-4xl font-bold text-emerald-900 mb-6">{text.title}</h2>
+                  <div className="space-y-6 mb-10">
+                    <div>
+                      <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">{t.projects.goal}</h4>
+                      <p className="text-slate-700 text-lg">{text.goal}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">{t.projects.impact}</h4>
+                      <p className="text-slate-700 text-lg">{text.impact}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-emerald-500 font-semibold uppercase tracking-wider text-sm mb-1">{t.projects.activities}</h4>
+                      <p className="text-slate-700 whitespace-pre-line">{text.activities}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage('donate')}
+                    className="bg-emerald-900 text-white px-8 py-4 rounded-full font-semibold hover:bg-emerald-800 transition-colors"
+                  >
+                    {t.projects.support}
+                  </button>
                 </div>
               </div>
-              <button className="bg-emerald-900 text-white px-8 py-4 rounded-full font-semibold hover:bg-emerald-800 transition-colors">
-                {t.projects.support}
-              </button>
-            </div>
-          </div>
-        ))}
+            );
+          })
+        )}
       </section>
     </div>
   );
 };
 
-const ImpactPage = ({ t }: { t: T }) => {
-  const metrics = [
-    { label: t.impact.metrics.hectares, value: '500+' },
-    { label: t.impact.metrics.compost, value: '200+' },
-    { label: t.impact.metrics.youth, value: '800+' },
-    { label: t.impact.metrics.women, value: '600+' },
-    { label: t.impact.metrics.pwd, value: '150+' },
-  ];
+const ImpactPage = ({
+  t,
+  language,
+}: {
+  t: T;
+  language: Language;
+}) => {
+  const [items, setItems] = useState<ImpactStoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const stop = startImpactStoriesPolling(
+      (data) => {
+        setItems(data.filter((i) => i.active));
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return stop;
+  }, []);
 
   return (
     <div className="pb-24">
@@ -1047,33 +944,53 @@ const ImpactPage = ({ t }: { t: T }) => {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 mb-24">
-          {metrics.map((m, idx) => (
-            <div key={idx} className="text-center p-8 bg-white rounded-3xl shadow-sm border border-emerald-900/5">
-              <div className="text-3xl font-bold text-emerald-900 mb-2">{m.value}</div>
-              <div className="text-xs text-slate-500 uppercase font-medium">{m.label}</div>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-slate-500">Loading impact stories...</div>
+        ) : items.length === 0 ? (
+          <div className="text-center text-slate-500">No impact stories added yet.</div>
+        ) : (
+          <div className="bg-[#fcfcf7] rounded-3xl p-12 md:p-24 border border-emerald-900/10">
+            <h2 className="text-3xl font-bold text-emerald-900 text-center mb-16">
+              {t.impact.stories}
+            </h2>
 
-        <div className="bg-[#fcfcf7] rounded-3xl p-12 md:p-24 border border-emerald-900/10">
-          <h2 className="text-3xl font-bold text-emerald-900 text-center mb-16">
-            {t.impact.stories}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {t.impact.testimonials.map((item, idx) => (
-              <div key={idx} className="flex flex-col items-center text-center">
-                <div className="text-emerald-500 mb-6">
-                  <Heart size={40} />
-                </div>
-                <p className="text-lg text-slate-700 italic mb-6 leading-relaxed">
-                  "{item.quote}"
-                </p>
-                <div className="font-bold text-emerald-900">{item.author}</div>
-              </div>
-            ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {items.map((item) => {
+                const text = getLocalizedImpact(item, language);
+
+                return (
+                  <div key={item.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-emerald-900/5">
+                    <div className="aspect-video overflow-hidden">
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-8">
+                      <div className="text-emerald-500 mb-4">
+                        <Heart size={32} />
+                      </div>
+                      <p className="text-lg text-slate-700 italic mb-6 leading-relaxed">
+                        "{text.quote}"
+                      </p>
+                      <div className="font-bold text-emerald-900">{item.name}</div>
+                      <div className="text-sm text-emerald-600 mb-4">{text.role}</div>
+
+                      {item.videoUrl ? (
+                        <a
+                          href={item.videoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-emerald-900 text-white px-4 py-3 rounded-xl font-bold hover:bg-emerald-800 transition-colors"
+                        >
+                          <PlayCircle size={18} />
+                          Watch Video
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="mt-24 text-center">
           <h2 className="text-3xl font-bold text-emerald-900 mb-12">{t.impact.model}</h2>
@@ -1089,56 +1006,14 @@ const ImpactPage = ({ t }: { t: T }) => {
   );
 };
 
-const NewsPage = ({ t }: { t: T }) => {
-  return (
-    <div className="pb-24">
-      <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl font-bold text-emerald-900 mb-6">{t.news.title}</h1>
-          <div className="flex justify-center gap-4 mt-8 flex-wrap">
-            {t.news.categories.map((cat) => (
-              <button
-                key={cat}
-                className="px-6 py-2 rounded-full border border-emerald-900/20 text-sm font-medium hover:bg-emerald-900 hover:text-white transition-colors"
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-emerald-900/5 group">
-              <div className="aspect-video overflow-hidden">
-                <img
-                  src={`https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=800&sig=${i + 10}`}
-                  alt="News"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-8">
-                <div className="text-xs text-emerald-500 font-bold uppercase mb-3">
-                  {t.news.cardType}
-                </div>
-                <h3 className="text-2xl font-bold text-emerald-900 mb-4">
-                  {t.news.cardTitle}
-                </h3>
-                <p className="text-slate-600 text-sm mb-6 line-clamp-3">
-                  {t.news.cardText}
-                </p>
-                <button className="text-emerald-900 font-bold flex items-center gap-2 hover:text-emerald-500">
-                  {t.common.readMore} <ArrowRight size={18} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-    </div>
-  );
+const NewsPage = ({
+  t,
+  language,
+}: {
+  t: T;
+  language: Language;
+}) => {
+  return <NewsPageContent t={t} language={language} />;
 };
 
 const DonatePage = ({ t }: { t: T }) => {
@@ -1168,22 +1043,14 @@ const DonatePage = ({ t }: { t: T }) => {
                 </button>
               ))}
             </div>
-            <button className="w-full bg-emerald-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-400 transition-colors">
-              {t.donate.donateNow}
-            </button>
+            <p className="text-slate-600 leading-relaxed">
+              Click below to send your donation request directly to our email, and we will guide you on how to donate.
+            </p>
           </div>
 
           <div className="bg-[#fcfcf7] p-12 rounded-3xl border border-emerald-900/10">
             <h2 className="text-3xl font-bold text-emerald-900 mb-8">{t.donate.volunteerToday}</h2>
-            <form className="space-y-4">
-              <input type="text" placeholder={t.donate.fullName} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <input type="email" placeholder={t.donate.email} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <input type="tel" placeholder={t.donate.phone} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <textarea placeholder={t.donate.interests} rows={4} className="w-full px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-              <button className="w-full bg-emerald-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-colors" type="button">
-                {t.donate.volunteerToday}
-              </button>
-            </form>
+            <DonateRequestForm t={t} />
           </div>
         </div>
       </section>
@@ -1191,7 +1058,37 @@ const DonatePage = ({ t }: { t: T }) => {
   );
 };
 
-const ProductsPage = ({ t }: { t: T }) => {
+const ProductsPage = ({
+  t,
+  language,
+}: {
+  t: T;
+  language: Language;
+}) => {
+  const [products, setProducts] = useState<ProductItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const stop = startProductsPolling(
+      (items) => {
+        setProducts(items.filter((item) => item.active));
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return stop;
+  }, []);
+
+  const grouped = useMemo(() => {
+    return products.reduce<Record<string, ProductItem[]>>((acc, item) => {
+      const text = getLocalizedProduct(item, language);
+      const key = text.category || 'Other';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(item);
+      return acc;
+    }, {});
+  }, [products, language]);
+
   return (
     <div className="pb-24">
       <section className="bg-[#fcfcf7] py-24 border-b border-emerald-900/5">
@@ -1206,134 +1103,54 @@ const ProductsPage = ({ t }: { t: T }) => {
       </section>
 
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="space-y-8"
-          >
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-bold uppercase tracking-wider">
-              <Sprout size={18} />
-              {t.products.nurseryBadge}
-            </div>
-            <h2 className="text-4xl font-bold text-emerald-900">{t.products.nurseryTitle}</h2>
-            <p className="text-lg text-slate-600">{t.products.nurseryText}</p>
+        {loading ? (
+          <div className="text-center text-slate-500">Loading products...</div>
+        ) : products.length === 0 ? (
+          <div className="text-center text-slate-500">No products added yet.</div>
+        ) : (
+          <div className="space-y-16">
+            {Object.entries(grouped).map(([category, categoryItems]) => (
+              <div key={category}>
+                <h2 className="text-3xl font-bold text-emerald-900 mb-8">{category}</h2>
 
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-emerald-900/5 space-y-6">
-              <h3 className="text-xl font-bold text-emerald-900">{t.products.categoriesTitle}</h3>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {t.products.categories.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl">
-                    <span className="text-2xl">🌿</span>
-                    <span className="font-medium text-slate-700">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-slate-600 text-sm italic border-l-4 border-emerald-500 pl-4">
-                {t.products.nurseryNote}
-              </p>
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  {categoryItems.map((item) => {
+                    const text = getLocalizedProduct(item, language);
 
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-emerald-900">{t.products.accessTitle}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-2 bg-emerald-900 text-white py-4 rounded-xl font-bold hover:bg-emerald-800 transition-colors">
-                  <FileText size={20} />
-                  {t.products.requestCatalog}
-                </button>
-                <button className="flex items-center justify-center gap-2 border-2 border-emerald-900 text-emerald-900 py-4 rounded-xl font-bold hover:bg-emerald-900 hover:text-white transition-all">
-                  <Phone size={20} />
-                  {t.products.contactSales}
-                </button>
-              </div>
-            </div>
-          </motion.div>
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-white rounded-3xl overflow-hidden shadow-sm border border-emerald-900/5 hover:shadow-xl transition-all duration-500"
+                      >
+                        <div className="aspect-[4/3] overflow-hidden">
+                          <img
+                            src={item.imageUrl}
+                            alt={text.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="space-y-8"
-          >
-            <div className="inline-flex items-center gap-3 px-4 py-2 bg-orange-100 text-orange-800 rounded-full text-sm font-bold uppercase tracking-wider">
-              <Package size={18} />
-              {t.products.freshBadge}
-            </div>
-            <h2 className="text-4xl font-bold text-emerald-900">{t.products.freshTitle}</h2>
-            <p className="text-lg text-slate-600">{t.products.freshText}</p>
+                        <div className="p-8">
+                          <div className="text-xs text-emerald-500 font-bold uppercase mb-3">
+                            {text.category}
+                          </div>
 
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-emerald-900/5 space-y-6">
-              <h3 className="text-xl font-bold text-emerald-900">{t.products.keyProducts}</h3>
-              <div className="flex flex-wrap gap-3">
-                {t.products.productList.map((item, i) => (
-                  <span key={i} className="px-6 py-3 bg-slate-50 rounded-full font-bold text-slate-700 border border-slate-100">
-                    {item}
-                  </span>
-                ))}
-              </div>
+                          <h3 className="text-2xl font-bold text-emerald-900 mb-4">
+                            {text.name}
+                          </h3>
 
-              <div className="space-y-3">
-                <h4 className="font-bold text-emerald-900">{t.products.marketCompliance}</h4>
-                <ul className="grid grid-cols-2 gap-2 text-sm text-slate-600">
-                  {t.products.compliance.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <CheckCircle size={14} className="text-emerald-500" /> {item}
-                    </li>
-                  ))}
-                </ul>
+                          <p className="text-slate-600 leading-relaxed">
+                            {text.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-emerald-900">{t.products.marketInfo}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-4 rounded-xl font-bold hover:bg-emerald-600 transition-colors">
-                  <ShoppingCart size={20} />
-                  {t.products.requestProductList}
-                </button>
-                <button className="flex items-center justify-center gap-2 border-2 border-emerald-500 text-emerald-500 py-4 rounded-xl font-bold hover:bg-emerald-500 hover:text-white transition-all">
-                  <Globe size={20} />
-                  {t.products.becomeBuyer}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      <section className="bg-emerald-900 py-24 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <h2 className="text-4xl font-bold mb-8">{t.products.impactTitle}</h2>
-              <p className="text-xl text-emerald-100 leading-relaxed mb-8">
-                {t.products.impactText}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {t.products.impactItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full" />
-                    <span className="font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative">
-              <div className="aspect-video rounded-3xl overflow-hidden shadow-2xl">
-                <img
-                  src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=1000"
-                  alt="Impact"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-8 -right-8 bg-emerald-400 p-8 rounded-3xl shadow-xl hidden md:block">
-                <p className="text-emerald-950 font-black text-2xl">{t.products.accessTag1}</p>
-                <p className="text-emerald-950/80 font-bold">{t.products.accessTag2}</p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
+        )}
       </section>
     </div>
   );
@@ -1355,43 +1172,10 @@ const ContactPage = ({ t }: { t: T }) => {
             <div>
               <h3 className="text-xl font-bold text-emerald-900 mb-6">{t.contact.details}</h3>
               <ul className="space-y-6">
-                <li className="flex gap-4 items-start">
-                  <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MapPin size={24} /></div>
-                  <div>
-                    <div className="font-bold">{t.contact.address}</div>
-                    <div className="text-slate-600">{t.footer.address}</div>
-                  </div>
-                </li>
-                <li className="flex gap-4 items-start">
-                  <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Phone size={24} /></div>
-                  <div>
-                    <div className="font-bold">{t.contact.phone}</div>
-                    <a href="tel:+250788963938" className="text-slate-600 hover:text-emerald-500 transition-colors">
-                      {t.topbar.phone}
-                    </a>
-                  </div>
-                </li>
-                <li className="flex gap-4 items-start">
-                  <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MessageCircle size={24} /></div>
-                  <div>
-                    <div className="font-bold">{t.contact.whatsapp}</div>
-                    <a
-                      href="https://wa.me/250788963938"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-600 hover:text-emerald-500 transition-colors"
-                    >
-                      {t.topbar.phone}
-                    </a>
-                  </div>
-                </li>
-                <li className="flex gap-4 items-start">
-                  <div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Mail size={24} /></div>
-                  <div>
-                    <div className="font-bold">{t.contact.email}</div>
-                    <div className="text-slate-600">{t.topbar.email}</div>
-                  </div>
-                </li>
+                <li className="flex gap-4 items-start"><div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MapPin size={24} /></div><div><div className="font-bold">{t.contact.address}</div><div className="text-slate-600">{t.footer.address}</div></div></li>
+                <li className="flex gap-4 items-start"><div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Phone size={24} /></div><div><div className="font-bold">{t.contact.phone}</div><a href="tel:+250788963938" className="text-slate-600 hover:text-emerald-500 transition-colors">{t.topbar.phone}</a></div></li>
+                <li className="flex gap-4 items-start"><div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><MessageCircle size={24} /></div><div><div className="font-bold">{t.contact.whatsapp}</div><a href="https://wa.me/250788963938" target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-emerald-500 transition-colors">{t.topbar.phone}</a></div></li>
+                <li className="flex gap-4 items-start"><div className="p-3 bg-emerald-900/10 rounded-xl text-emerald-900"><Mail size={24} /></div><div><div className="font-bold">{t.contact.email}</div><div className="text-slate-600">{t.topbar.email}</div></div></li>
               </ul>
             </div>
             <div>
@@ -1406,18 +1190,7 @@ const ContactPage = ({ t }: { t: T }) => {
           </div>
 
           <div className="lg:col-span-2">
-            <div className="bg-white p-12 rounded-3xl shadow-sm border border-emerald-900/5">
-              <h3 className="text-2xl font-bold text-emerald-900 mb-8">{t.contact.formTitle}</h3>
-              <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <input type="text" placeholder={t.contact.yourName} className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <input type="email" placeholder={t.contact.yourEmail} className="px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <input type="tel" placeholder={t.contact.phoneNumber} className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <textarea placeholder={t.contact.yourMessage} rows={6} className="md:col-span-2 px-6 py-4 rounded-xl border border-emerald-900/10 focus:outline-none focus:border-emerald-500" />
-                <button type="button" className="md:col-span-2 bg-emerald-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-emerald-800 transition-colors">
-                  {t.common.sendMessage}
-                </button>
-              </form>
-            </div>
+            <ContactForm t={t} />
           </div>
         </div>
       </section>
@@ -1425,7 +1198,27 @@ const ContactPage = ({ t }: { t: T }) => {
   );
 };
 
-const PartnersPage = ({ t }: { t: T }) => {
+const PartnersPage = ({
+  t,
+  language,
+}: {
+  t: T;
+  language: Language;
+}) => {
+  const [partners, setPartners] = useState<PartnerItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const stop = startPartnersPolling(
+      (items) => {
+        setPartners(items.filter((item) => item.active));
+        setLoading(false);
+      },
+      () => setLoading(false)
+    );
+    return stop;
+  }, []);
+
   return (
     <div className="pb-24">
       <section className="bg-emerald-900 text-white py-32 relative overflow-hidden">
@@ -1448,19 +1241,51 @@ const PartnersPage = ({ t }: { t: T }) => {
           </span>
           <h2 className="text-4xl font-bold text-emerald-900">{t.partners.ecosystem}</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <motion.div
-              key={i}
-              whileHover={{ scale: 1.05 }}
-              className="bg-white p-12 rounded-[2rem] shadow-sm border border-emerald-900/5 flex items-center justify-center group hover:shadow-xl transition-all duration-500"
-            >
-              <div className="w-full aspect-video bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 font-bold text-lg group-hover:text-emerald-900 transition-colors">
-                {t.partners.partner} {i}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
+        {loading ? (
+          <div className="text-center text-slate-500">Loading partners...</div>
+        ) : partners.length === 0 ? (
+          <div className="text-center text-slate-500">No partners added yet.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {partners.map((partner) => {
+              const text = getLocalizedPartner(partner, language);
+
+              return (
+                <motion.div
+                  key={partner.id}
+                  whileHover={{ scale: 1.03 }}
+                  className="bg-white p-8 rounded-[2rem] shadow-sm border border-emerald-900/5 hover:shadow-xl transition-all duration-500"
+                >
+                  <div className="aspect-video rounded-2xl overflow-hidden mb-6 bg-slate-50">
+                    <img
+                      src={partner.imageUrl}
+                      alt={partner.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <h3 className="text-xl font-bold text-emerald-900 mb-3">{partner.name}</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-5">
+                    {text.description}
+                  </p>
+
+                  {partner.websiteUrl ? (
+                    <a
+                      href={partner.websiteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-emerald-900 font-semibold hover:text-emerald-500"
+                    >
+                      Visit <ExternalLink size={16} />
+                    </a>
+                  ) : null}
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="mt-32 bg-[#fcfcf7] rounded-[3rem] p-16 md:p-24 text-center border border-emerald-900/5">
           <h3 className="text-4xl font-bold text-emerald-900 mb-8">{t.partners.collaborationTitle}</h3>
           <p className="text-slate-600 max-w-2xl mx-auto mb-12 text-lg">
@@ -1473,6 +1298,10 @@ const PartnersPage = ({ t }: { t: T }) => {
       </section>
     </div>
   );
+};
+
+const AdminPage = ({ t }: { t: T }) => {
+  return <AdminPageContent t={t} />;
 };
 
 export default function App() {
@@ -1521,6 +1350,7 @@ export default function App() {
       news: `${t.nav.news} - EcoCycle Rwanda`,
       donate: `${t.nav.donate} - EcoCycle Rwanda`,
       contact: `${t.nav.contact} - EcoCycle Rwanda`,
+      admin: `Admin - EcoCycle Rwanda`,
       'service-farming': `${t.servicesPage.cards.farming.title} - EcoCycle Rwanda`,
       'service-climate': `${t.servicesPage.cards.climate.title} - EcoCycle Rwanda`,
       'service-circular': `${t.servicesPage.cards.circular.title} - EcoCycle Rwanda`,
@@ -1541,11 +1371,9 @@ export default function App() {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} t={t} />;
-
+        return <HomePage setCurrentPage={setCurrentPage} t={t} language={safeLanguage} />;
       case 'about':
-        return <AboutPage t={t} />;
-
+        return <AboutPage t={t} language={safeLanguage} />;
       case 'services':
         return <ServicesPage setCurrentPage={setCurrentPage} t={t} />;
 
@@ -1620,28 +1448,23 @@ export default function App() {
         );
 
       case 'projects':
-        return <ProjectsPage t={t} />;
-
+        return <ProjectsPage t={t} language={safeLanguage} setCurrentPage={setCurrentPage} />;
       case 'impact':
-        return <ImpactPage t={t} />;
-
+        return <ImpactPage t={t} language={safeLanguage} />;
       case 'partners':
-        return <PartnersPage t={t} />;
-
+        return <PartnersPage t={t} language={safeLanguage} />;
       case 'news':
-        return <NewsPage t={t} />;
-
+        return <NewsPage t={t} language={safeLanguage} />;
       case 'donate':
         return <DonatePage t={t} />;
-
       case 'products':
-        return <ProductsPage t={t} />;
-
+        return <ProductsPage t={t} language={safeLanguage} />;
       case 'contact':
         return <ContactPage t={t} />;
-
+      case 'admin':
+        return <AdminPage t={t} />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} t={t} />;
+        return <HomePage setCurrentPage={setCurrentPage} t={t} language={safeLanguage} />;
     }
   };
 
